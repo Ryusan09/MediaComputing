@@ -1,6 +1,7 @@
 #include <iostream>           //入出力関連ヘッダ
 #include <opencv2/opencv.hpp> //OpenCV関連ヘッダ
 #include <string>
+#include <cmath>
 
 using namespace std;
 using namespace cv;
@@ -35,7 +36,7 @@ namespace gray
         int maxVal = *std::max_element(hArray.begin(), hArray.end());
         cv::Mat histImage(hSize, CV_8UC3, cv::Scalar(0, 0, 0)); // 黒背景のヒストグラム画像
 
-        for (int i = 0; i < hArray.size(); i++)
+        for (int i = 0; i < (int)hArray.size() - 1; i++)
         {
             int height = static_cast<int>((hArray[i] / static_cast<double>(maxVal)) * hSize.height);
             int height2 = static_cast<int>((hArray[i + 1] / static_cast<double>(maxVal)) * hSize.height);
@@ -46,35 +47,82 @@ namespace gray
         cv::imshow(winname, histImage);
     }
 
+    // --- 全画像統計量 ---
+
     int min(cv::Mat src)
     {
-        
+        int minVal = 255;
+        for (int y = 0; y < src.rows; y++)
+            for (int x = 0; x < src.cols; x++)
+                if (src.at<uchar>(y, x) < minVal)
+                    minVal = src.at<uchar>(y, x);
+        return minVal;
     }
 
     int max(cv::Mat src)
     {
+        int maxVal = 0;
+        for (int y = 0; y < src.rows; y++)
+            for (int x = 0; x < src.cols; x++)
+                if (src.at<uchar>(y, x) > maxVal)
+                    maxVal = src.at<uchar>(y, x);
+        return maxVal;
     }
 
     double mean(cv::Mat src)
     {
+        double sum = 0.0;
+        int total = src.rows * src.cols;
+        for (int y = 0; y < src.rows; y++)
+            for (int x = 0; x < src.cols; x++)
+                sum += src.at<uchar>(y, x);
+        return sum / total;
     }
 
     int median(cv::Mat src)
     {
+        std::vector<int> hist;
+        make_histogram(src, hist);
+        int total = src.rows * src.cols;
+        int cumulative = 0;
+        for (int i = 0; i < 256; i++)
+        {
+            cumulative += hist[i];
+            if (cumulative >= total / 2)
+                return i;
+        }
+        return 255;
     }
 
     int mode(cv::Mat src)
     {
+        std::vector<int> hist;
+        make_histogram(src, hist);
+        return (int)(std::max_element(hist.begin(), hist.end()) - hist.begin());
     }
 
     double variance(cv::Mat src)
     {
+        double m = mean(src);
+        double sum = 0.0;
+        int total = src.rows * src.cols;
+        for (int y = 0; y < src.rows; y++)
+            for (int x = 0; x < src.cols; x++)
+            {
+                double diff = src.at<uchar>(y, x) - m;
+                sum += diff * diff;
+            }
+        return sum / total;
     }
 
     double stddev(cv::Mat src)
     {
+        return std::sqrt(variance(src));
     }
+
 }
+
+
 namespace coler
 {
     void make_histgram(const cv::Mat src, std::vector<std::vector<int>> &hArray)
@@ -103,7 +151,7 @@ namespace coler
         int R_maxVal = *std::max_element(hArray[2].begin(), hArray[2].end());
         cv::Mat histImage(hSize, CV_8UC3, cv::Scalar(0, 0, 0)); // 黒背景のヒストグラム画像
 
-        for (int i = 0; i < hArray[0].size(); i++)
+        for (int i = 0; i < (int)hArray[0].size() - 1; i++)
         {
             // B
             int B_height = static_cast<int>((hArray[0][i] / static_cast<double>(B_maxVal)) * hSize.height);

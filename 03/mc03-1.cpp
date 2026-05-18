@@ -7,8 +7,8 @@
 using namespace std;
 using namespace cv;
 
-using namespace gray
-using namespace coler
+using namespace gray;
+using namespace coler;
 
 int main (int argc, const char* argv[]) {
     //画像ファイルの読み込み
