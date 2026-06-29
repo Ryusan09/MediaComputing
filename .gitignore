@@ -42,3 +42,6 @@
 
 # .gitignoreファイルに追加
 .DS_Store
+
+# Compiled binaries without extension
+mc09-3
